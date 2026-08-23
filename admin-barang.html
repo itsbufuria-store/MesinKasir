@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BUFURIA - Kelola Data Barang</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+
+    <!-- Header -->
+    <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <img src="images/logo.png" alt="Logo" class="h-9 object-contain" onerror="this.onerror=null; this.src='logo.png';">
+                <div>
+                    <h1 class="font-black text-base text-amber-400 tracking-wide">BUFURIA - KELOLA BARANG</h1>
+                    <p class="text-[11px] text-slate-400">Database & Pengisian List Stok Produk</p>
+                </div>
+            </div>
+            <a href="kasir.html" class="bg-amber-500 hover:bg-amber-600 text-slate-950 px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-2 transition">
+                <i data-lucide="calculator" class="w-4 h-4"></i>
+                <span>Buka Aplikasi Kasir &rarr;</span>
+            </a>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Form Tambah / Edit Barang (4 Cols) -->
+        <div class="lg:col-span-4 space-y-4">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-4">
+                <h2 class="font-bold text-sm text-slate-800 flex items-center space-x-2 border-b pb-3">
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-amber-500"></i>
+                    <span id="form-title">Tambah Barang / Jasa Baru</span>
+                </h2>
+
+                <form id="product-form" onsubmit="handleSaveProduct(event)" class="space-y-3 text-xs">
+                    <input type="hidden" id="input-id">
+                    
+                    <div>
+                        <label class="block text-slate-600 font-semibold mb-1">Kode Barang / Barcode:</label>
+                        <input type="text" id="input-code" required placeholder="Contoh: BRG-001" class="w-full border border-slate-300 rounded-lg p-2 font-mono outline-none focus:ring-2 focus:ring-amber-500">
+                    </div>
+
+                    <div>
+                        <label class="block text-slate-600 font-semibold mb-1">Nama Barang / Jasa:</label>
+                        <input type="text" id="input-name" required placeholder="Nama lengkap produk/jasa..." class="w-full border border-slate-300 rounded-lg p-2 font-semibold outline-none focus:ring-2 focus:ring-amber-500">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-slate-600 font-semibold mb-1">Kategori:</label>
+                            <select id="input-category" class="w-full border border-slate-300 rounded-lg p-2 outline-none focus:ring-2 focus:ring-amber-500">
+                                <option value="ATK Kantor">ATK Kantor</option>
+                                <option value="3D Printer">3D Printer</option>
+                                <option value="Servis Laptop">Servis Laptop</option>
+                                <option value="Lain-lain">Lain-lain</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-slate-600 font-semibold mb-1">Satuan:</label>
+                            <input type="text" id="input-unit" required placeholder="Pcs / Gram / Roll" class="w-full border border-slate-300 rounded-lg p-2 outline-none focus:ring-2 focus:ring-amber-500">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-slate-600 font-semibold mb-1">Harga Jual (Rp):</label>
+                            <input type="number" id="input-price" required placeholder="0" class="w-full border border-slate-300 rounded-lg p-2 font-mono outline-none focus:ring-2 focus:ring-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-slate-600 font-semibold mb-1">Stok Awal:</label>
+                            <input type="number" id="input-stock" required placeholder="0" class="w-full border border-slate-300 rounded-lg p-2 font-mono outline-none focus:ring-2 focus:ring-amber-500">
+                        </div>
+                    </div>
+
+                    <div class="pt-2 flex items-center space-x-2">
+                        <button type="submit" class="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2.5 px-4 rounded-lg flex items-center justify-center space-x-1.5 shadow-md transition">
+                            <i data-lucide="save" class="w-4 h-4"></i>
+                            <span id="btn-save-text">Simpan Produk</span>
+                        </button>
+                        <button type="button" onclick="resetProductForm()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold py-2.5 px-3 rounded-lg transition">
+                            Reset
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tabel Daftar Produk (8 Cols) -->
+        <div class="lg:col-span-8 space-y-4">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-4">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b pb-3">
+                    <h2 class="font-bold text-sm text-slate-800 flex items-center space-x-2">
+                        <i data-lucide="package" class="w-4 h-4 text-amber-500"></i>
+                        <span>Master Database Barang (<span id="total-items">0</span>)</span>
+                    </h2>
+                    <input type="text" id="search-input" oninput="renderTable()" placeholder="Cari nama / kode barang..." class="border border-slate-300 rounded-lg px-3 py-1.5 text-xs outline-none focus:ring-2 focus:ring-amber-500 w-52">
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs">
+                        <thead>
+                            <tr class="bg-slate-900 text-white font-bold">
+                                <th class="p-2.5 text-left">Kode</th>
+                                <th class="p-2.5 text-left">Nama Barang / Jasa</th>
+                                <th class="p-2.5 text-center">Kategori</th>
+                                <th class="p-2.5 text-right">Harga (Rp)</th>
+                                <th class="p-2.5 text-center">Stok</th>
+                                <th class="p-2.5 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="product-table-body" class="divide-y divide-slate-100">
+                            <!-- JS Generated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const DEFAULT_PRODUCTS = [
+            { id: '1', code: 'ATK-001', name: 'Kertas HVS A4 80gr 1 Rim', category: 'ATK Kantor', unit: 'Rim', price: 48000, stock: 25 },
+            { id: '2', code: 'ATK-002', name: 'Pulpen Gel Black 0.5mm', category: 'ATK Kantor', unit: 'Pcs', price: 3500, stock: 100 },
+            { id: '3', code: '3D-001', name: 'Jasa 3D Print High Detail (PLA)', category: '3D Printer', unit: 'Gram', price: 1500, stock: 9999 },
+            { id: '4', code: '3D-002', name: 'Filament PLA+ 1kg Roll', category: '3D Printer', unit: 'Roll', price: 185000, stock: 12 },
+            { id: '5', code: 'SRV-001', name: 'Install Windows 11 + Software Standar', category: 'Servis Laptop', unit: 'Paket', price: 75000, stock: 999 },
+            { id: '6', code: 'SRV-002', name: 'Servis Laptop (Cleaning & Thermal Paste)', category: 'Servis Laptop', unit: 'Unit', price: 85000, stock: 999 }
+        ];
+
+        function getProducts() {
+            const data = localStorage.getItem('bufuria_products');
+            if (!data) {
+                localStorage.setItem('bufuria_products', JSON.stringify(DEFAULT_PRODUCTS));
+                return DEFAULT_PRODUCTS;
+            }
+            return JSON.parse(data);
+        }
+
+        function saveProducts(products) {
+            localStorage.setItem('bufuria_products', JSON.stringify(products));
+            renderTable();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('product-table-body');
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const products = getProducts().filter(p => p.name.toLowerCase().includes(search) || p.code.toLowerCase().includes(search));
+
+            document.getElementById('total-items').innerText = products.length;
+            tbody.innerHTML = '';
+
+            if (products.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">Tidak ada barang ditemukan.</td></tr>`;
+                return;
+            }
+
+            products.forEach(p => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-2.5 font-mono font-bold text-slate-600">${p.code}</td>
+                        <td class="p-2.5 font-semibold text-slate-900">${p.name}</td>
+                        <td class="p-2.5 text-center"><span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded text-[10px] font-semibold">${p.category}</span></td>
+                        <td class="p-2.5 text-right font-mono font-bold text-amber-600">Rp ${new Intl.NumberFormat('id-ID').format(p.price)} / ${p.unit}</td>
+                        <td class="p-2.5 text-center font-mono font-bold ${p.stock < 5 ? 'text-rose-600' : 'text-slate-700'}">${p.stock}</td>
+                        <td class="p-2.5 text-center space-x-1">
+                            <button onclick="editProduct('${p.id}')" class="bg-amber-100 text-amber-800 px-2 py-1 rounded font-semibold text-[10px]">Edit</button>
+                            <button onclick="deleteProduct('${p.id}')" class="bg-rose-100 text-rose-700 px-2 py-1 rounded font-semibold text-[10px]">Hapus</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            lucide.createIcons();
+        }
+
+        function handleSaveProduct(e) {
+            e.preventDefault();
+            const id = document.getElementById('input-id').value;
+            const code = document.getElementById('input-code').value;
+            const name = document.getElementById('input-name').value;
+            const category = document.getElementById('input-category').value;
+            const unit = document.getElementById('input-unit').value;
+            const price = parseFloat(document.getElementById('input-price').value) || 0;
+            const stock = parseInt(document.getElementById('input-stock').value) || 0;
+
+            let products = getProducts();
+
+            if (id) {
+                products = products.map(p => p.id === id ? { id, code, name, category, unit, price, stock } : p);
+            } else {
+                products.push({ id: Date.now().toString(), code, name, category, unit, price, stock });
+            }
+
+            saveProducts(products);
+            resetProductForm();
+        }
+
+        function editProduct(id) {
+            const p = getProducts().find(item => item.id === id);
+            if (!p) return;
+
+            document.getElementById('input-id').value = p.id;
+            document.getElementById('input-code').value = p.code;
+            document.getElementById('input-name').value = p.name;
+            document.getElementById('input-category').value = p.category;
+            document.getElementById('input-unit').value = p.unit;
+            document.getElementById('input-price').value = p.price;
+            document.getElementById('input-stock').value = p.stock;
+
+            document.getElementById('form-title').innerText = 'Edit Data Barang';
+            document.getElementById('btn-save-text').innerText = 'Update Produk';
+        }
+
+        function deleteProduct(id) {
+            if (confirm('Yakin ingin menghapus barang ini?')) {
+                const products = getProducts().filter(p => p.id !== id);
+                saveProducts(products);
+            }
+        }
+
+        function resetProductForm() {
+            document.getElementById('product-form').reset();
+            document.getElementById('input-id').value = '';
+            document.getElementById('form-title').innerText = 'Tambah Barang / Jasa Baru';
+            document.getElementById('btn-save-text').innerText = 'Simpan Produk';
+        }
+
+        window.onload = function() {
+            renderTable();
+        };
+    </script>
+</body>
+</html>
