@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BUFURIA POS & Faktur</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons CDN -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+
+        /* Media Print Khusus Printer & Continuous Form */
+        @media print {
+            body * { visibility: hidden; }
+            .no-print { display: none !important; }
+            #printable-faktur, #printable-faktur * { visibility: visible; }
+            #printable-faktur {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 4px !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+            @page {
+                size: A4 landscape;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 min-h-screen">
+
+    <!-- Header Navigation -->
+    <header class="no-print bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-br from-amber-500 to-amber-600 w-10 h-10 rounded-xl flex items-center justify-center shadow-lg font-black text-slate-950 text-xl border border-amber-300">
+                    B
+                </div>
+                <div>
+                    <h1 className="font-extrabold text-lg tracking-wide text-white leading-tight">
+                        BUFURIA POS & FAKTUR
+                    </h1>
+                    <p className="text-xs text-amber-400 font-medium">Auto-Save Cloud & GitHub Folder Logo</p>
+                </div>
+            </div>
+
+            <!-- Tab Controls -->
+            <div class="flex items-center space-x-2">
+                <button id="btn-tab-pos" onclick="switchTab('pos')" class="px-3.5 py-2 rounded-lg text-xs font-bold flex items-center space-x-2 bg-amber-500 text-slate-950 shadow-md transition">
+                    <i data-lucide="calculator" class="w-4 h-4"></i>
+                    <span>Mesin Kasir</span>
+                </button>
+                <button id="btn-tab-preview" onclick="switchTab('preview')" class="px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 bg-slate-800 text-slate-300 hover:bg-slate-700 transition">
+                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                    <span>Pratinjau Faktur</span>
+                </button>
+                <button id="btn-tab-history" onclick="switchTab('history')" class="px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 bg-slate-800 text-slate-300 hover:bg-slate-700 transition">
+                    <i data-lucide="history" class="w-4 h-4"></i>
+                    <span>Riwayat Transaksi</span>
+                </button>
+                <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2 rounded-lg text-xs font-bold flex items-center space-x-2 shadow-lg transition ml-2">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                    <span>Cetak (Ctrl+P)</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto p-4 md:p-6">
+
+        <!-- TAB 1: MESIN KASIR -->
+        <div id="tab-pos" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Left Form (8 Cols) -->
+            <div class="lg:col-span-8 space-y-5">
+                
+                <!-- Card Pelanggan -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-4">
+                    <div class="flex items-center justify-between border-b pb-3 border-slate-100">
+                        <h2 class="font-bold text-slate-800 flex items-center space-x-2">
+                            <i data-lucide="user" class="w-5 h-5 text-amber-500"></i>
+                            <span>Informasi Pelanggan & Kwitansi</span>
+                        </h2>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs font-semibold text-slate-500">No. Faktur:</span>
+                            <input type="text" id="input-invoice-no" value="000001" oninput="updatePreview()" class="w-28 font-mono font-bold text-red-600 border border-slate-300 rounded px-2.5 py-1 text-xs text-center bg-red-50 outline-none">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div>
+                            <label class="block text-slate-600 font-semibold mb-1">Kepada Yth. (Nama Pembeli):</label>
+                            <input type="text" id="input-customer-name" value="Toko Berkah Utama" oninput="updatePreview()" placeholder="Nama pembeli..." class="w-full border border-slate-300 rounded-lg p-2 font-semibold text-slate-900 outline-none focus:ring-2 focus:ring-amber-500">
+                            <p class="text-[10px] text-amber-600 mt-1 font-medium">*Nama ini otomatis mengisi kolom tanda tangan Penerima</p>
+                        </div>
+                        <div>
+                            <label class="block text-slate-600 font-semibold mb-1">Tanggal Transaksi:</label>
+                            <input type="date" id="input-date" onchange="updatePreview()" class="w-full border border-slate-300 rounded-lg p-2 outline-none focus:ring-2 focus:ring-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-slate-600 font-semibold mb-1">Alamat Pembeli:</label>
+                            <input type="text" id="input-customer-address" value="Jl. Raya Nusaherang No. 12, Kuningan" oninput="updatePreview()" placeholder="Alamat pembeli..." class="w-full border border-slate-300 rounded-lg p-2 outline-none focus:ring-2 focus:ring-amber-500">
+                        </div>
+                        <div>
+                            <label class="block text-slate-600 font-semibold mb-1">No. Telp / HP:</label>
+                            <input type="text" id="input-customer-phone" value="0812-3456-7890" oninput="updatePreview()" placeholder="08xxxxxxxxxx" class="w-full border border-slate-300 rounded-lg p-2 outline-none focus:ring-2 focus:ring-amber-500">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Tabel Barang (6 Baris) -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-4">
+                    <div class="flex items-center justify-between border-b pb-3 border-slate-100">
+                        <h2 class="font-bold text-slate-800 flex items-center space-x-2">
+                            <i data-lucide="shopping-bag" class="w-5 h-5 text-amber-500"></i>
+                            <span>Detail Rincian Pembelian (Tepat 6 Baris)</span>
+                        </h2>
+                        <button onclick="clearItemsForm()" class="text-xs text-rose-600 hover:text-rose-700 font-semibold flex items-center space-x-1">
+                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                            <span>Reset Tabel</span>
+                        </button>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs">
+                            <thead>
+                                <tr class="bg-slate-900 text-white font-bold">
+                                    <th class="p-2 text-center w-8">No</th>
+                                    <th class="p-2 text-left">Nama Barang / Jasa</th>
+                                    <th class="p-2 text-center w-16">Qty</th>
+                                    <th class="p-2 text-center w-20">Satuan</th>
+                                    <th class="p-2 text-right w-28">Harga (Rp)</th>
+                                    <th class="p-2 text-right w-32">Jumlah (Rp)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pos-items-body" class="divide-y divide-slate-100">
+                                <!-- Generated JS -->
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Calculator Summary -->
+                    <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div class="space-y-2">
+                            <label class="block text-slate-700 font-semibold">Catatan Transaksi:</label>
+                            <textarea id="input-note" rows="3" oninput="updatePreview()" placeholder="Catatan khusus garansi / instruksi..." class="w-full border border-slate-300 rounded-lg p-2 outline-none focus:ring-2 focus:ring-amber-500"></textarea>
+                        </div>
+                        <div class="space-y-2 font-medium">
+                            <div class="flex justify-between items-center text-slate-600">
+                                <span>Subtotal:</span>
+                                <span id="text-subtotal" class="font-mono font-bold text-sm">Rp 0</span>
+                            </div>
+                            <div class="flex justify-between items-center text-slate-600">
+                                <span>Diskon (Rp):</span>
+                                <input type="number" id="input-discount" value="10000" oninput="calculateTotal()" class="w-32 border border-slate-300 rounded px-2 py-1 text-right font-mono outline-none focus:ring-2 focus:ring-amber-500">
+                            </div>
+                            <div class="flex justify-between items-center text-slate-900 border-t pt-2 font-bold text-base">
+                                <span>Total Pembayaran:</span>
+                                <span id="text-grandtotal" class="font-mono text-amber-600">Rp 0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs">
+                        <span class="font-bold text-amber-900">Terbilang: </span>
+                        <span id="text-terbilang" class="italic text-amber-800 font-medium">"Nol Rupiah"</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-amber-50/60 p-4 rounded-xl border border-amber-200 text-xs">
+                        <div>
+                            <label class="block text-slate-800 font-bold mb-1">Bayar / Cash (Rp):</label>
+                            <input type="number" id="input-cash" value="350000" oninput="calculateTotal()" class="w-full border-2 border-amber-400 rounded-lg px-3 py-2 text-base font-mono font-bold text-slate-900 outline-none bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-slate-800 font-bold mb-1">Kembalian (Rp):</label>
+                            <div id="text-change" class="w-full bg-white border-2 border-amber-300 rounded-lg px-3 py-2 text-base font-mono font-bold text-emerald-600">
+                                Rp 0
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-wrap gap-3 pt-2">
+                        <button onclick="saveTransactionToLocalStorage()" class="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center space-x-2 shadow-md transition">
+                            <i data-lucide="save" class="w-4 h-4 text-emerald-400"></i>
+                            <span>Simpan Transaksi</span>
+                        </button>
+                        <button onclick="switchTab('preview')" class="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center space-x-2 shadow-md transition">
+                            <i data-lucide="file-text" class="w-4 h-4"></i>
+                            <span>Pratinjau Faktur</span>
+                        </button>
+                        <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-xl text-xs flex items-center justify-center space-x-2 shadow-lg transition">
+                            <i data-lucide="printer" class="w-4 h-4"></i>
+                            <span>Cetak Faktur</span>
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Right Catalog (4 Cols) -->
+            <div class="lg:col-span-4 space-y-5">
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-4">
+                    <div class="border-b pb-3 border-slate-100">
+                        <h2 class="font-bold text-slate-800 flex items-center space-x-2">
+                            <i data-lucide="shopping-bag" class="w-5 h-5 text-amber-500"></i>
+                            <span>Katalog Cepat BUFURIA</span>
+                        </h2>
+                    </div>
+
+                    <div id="catalog-list" class="max-h-96 overflow-y-auto space-y-2 pr-1 divide-y divide-slate-100">
+                        <!-- Generated JS -->
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-3">
+                    <h3 class="font-bold text-xs text-slate-700 uppercase">Pengaturan Kasir</h3>
+                    <div class="text-xs space-y-2">
+                        <div>
+                            <label class="block text-slate-600 mb-1">Dibuat Oleh (Admin):</label>
+                            <input type="text" id="input-creator" value="Admin BUFURIA" oninput="updatePreview()" class="w-full border border-slate-200 rounded px-2 py-1 outline-none">
+                        </div>
+                        <div class="p-2 bg-slate-50 rounded border text-[11px] text-slate-500">
+                            *Penerima otomatis terisi nama pembeli: <b id="text-penerima-info">-</b>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- TAB 2: PRATINJAU HASIL CETAK FAKTUR -->
+        <div id="tab-preview" class="hidden">
+            <div class="no-print flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-lg font-bold text-slate-800">Pratinjau Hasil Cetak Faktur</h2>
+                    <p class="text-xs text-slate-500"> Continuous Form Berwarna Presisi Sesuai Template Asli BUFURIA</p>
+                </div>
+                <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg text-xs flex items-center space-x-2 shadow-md transition">
+                    <i data-lucide="printer" class="w-4 h-4"></i>
+                    <span>Cetak Faktur (Ctrl+P)</span>
+                </button>
+            </div>
+
+            <!-- FAKTUR CONTINUOUS FORM (REPLIKA IDENTIK) -->
+            <div class="overflow-x-auto pb-8">
+                <div id="printable-faktur" class="bg-white mx-auto shadow-2xl relative border border-slate-300" style="width: 210mm; min-height: 145mm; padding: 12px 14px; box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; color: #0f172a;">
+                    
+                    <!-- Lubang Tractor Feed Kiri -->
+                    <div class="absolute left-0 top-0 bottom-0 w-5 border-r border-dashed border-slate-300 flex flex-col justify-between py-2 items-center pointer-events-none">
+                        <template id="hole-template">
+                            <div class="w-2.5 h-2.5 rounded-full bg-slate-900"></div>
+                        </template>
+                        <div class="holes-container flex flex-col justify-between h-full items-center"></div>
+                        <div class="absolute top-1/2 -left-3 transform -translate-y-1/2 -rotate-90 text-[8px] font-bold tracking-widest text-slate-900 uppercase whitespace-nowrap">
+                            TERIMA KASIH ATAS KEPERCAYAAN ANDA
+                        </div>
+                    </div>
+
+                    <!-- Lubang Tractor Feed Kanan -->
+                    <div class="absolute right-0 top-0 bottom-0 w-5 border-l border-dashed border-slate-300 flex flex-col justify-between py-2 items-center pointer-events-none">
+                        <div class="holes-container flex flex-col justify-between h-full items-center"></div>
+                        <div class="absolute top-1/2 -right-3 transform -translate-y-1/2 rotate-90 text-[8px] font-bold tracking-widest text-slate-900 uppercase whitespace-nowrap">
+                            DARI IDE JADI KARYA
+                        </div>
+                    </div>
+
+                    <!-- Content Inside Margins -->
+                    <div class="px-5">
+                        
+                        <!-- Header Top Section -->
+                        <div class="flex justify-between items-start mb-2">
+                            <!-- Logo Foto dari Folder GitHub -->
+                            <div class="w-[62%]">
+                                <div class="flex items-center space-x-3">
+                                    <div class="h-12 max-w-[220px] flex items-center justify-start">
+                                        <!-- MEMANGGIL FOTO LOGO DARI FOLDER GITHUB LOKAL -->
+                                        <img src="images/logo.png" id="faktur-logo-img" alt="BUFURIA Logo" class="h-full object-contain max-h-12" onerror="this.onerror=null; this.src='logo.png';">
+                                    </div>
+                                </div>
+                                <div class="text-[8px] font-bold text-slate-900 mt-1 space-x-1">
+                                    <span>ATK KANTOR</span> <span>|</span> <span>CREATIVE 3D PRINTER</span> <span>|</span> <span>TEKNISI & SERVIS LAPTOP</span>
+                                </div>
+                                <div class="text-[8px] font-bold text-slate-900 tracking-tight">
+                                    HASIL KARYA SENI 3D PRINTER & LAINNYA
+                                </div>
+                            </div>
+
+                            <!-- Judul & No Faktur -->
+                            <div class="w-[36%] text-right">
+                                <h2 class="text-sm font-black tracking-wide uppercase text-slate-900 mb-1">
+                                    FAKTUR / KWITANSI PEMBELIAN
+                                </h2>
+                                <div class="text-[10px] font-bold space-y-1">
+                                    <div class="flex justify-end items-center">
+                                        <span class="w-16 text-left text-slate-700">Tanggal</span>
+                                        <span id="prev-date" class="text-slate-900">: -</span>
+                                    </div>
+                                    <div class="flex justify-end items-center">
+                                        <span class="w-16 text-left text-slate-700">No. Faktur</span>
+                                        <span id="prev-invoice-no" class="border-2 border-slate-900 rounded-md px-4 py-0.5 font-mono font-black text-xs text-red-600 bg-white">
+                                            000001
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Customer Box -->
+                        <div class="grid grid-cols-2 gap-2 mb-2 text-[10px] font-bold">
+                            <div class="border border-slate-900 rounded-lg p-2 min-h-[55px] leading-tight">
+                                <div class="flex">
+                                    <span class="w-20 text-slate-800">Kepada Yth.</span>
+                                    <span id="prev-customer-name" class="text-slate-900 font-extrabold">: -</span>
+                                </div>
+                                <div id="prev-customer-addr-line" class="pl-20 border-b border-dotted border-slate-400 min-h-[14px] mt-1 text-slate-700 font-medium">-</div>
+                                <div class="border-b border-dotted border-slate-400 min-h-[14px] mt-1"></div>
+                            </div>
+
+                            <div class="border border-slate-900 rounded-lg p-2 min-h-[55px] leading-tight">
+                                <div class="flex">
+                                    <span class="w-16 text-slate-800">Alamat</span>
+                                    <span id="prev-customer-addr" class="text-slate-900 font-medium">: -</span>
+                                </div>
+                                <div class="pl-16 border-b border-dotted border-slate-400 min-h-[14px] mt-1"></div>
+                                <div class="flex mt-1">
+                                    <span class="w-16 text-slate-800">No. Telp/HP</span>
+                                    <span id="prev-customer-phone" class="text-slate-900 font-medium">: -</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tabel Utama Barang (Header Biru Tua) -->
+                        <table class="w-full border-collapse border border-slate-900 text-[10px] font-bold mb-2">
+                            <thead>
+                                <tr class="bg-slate-900 text-white font-bold">
+                                    <th class="border-r border-slate-900 p-1 w-[5%] text-center">No.</th>
+                                    <th class="border-r border-slate-900 p-1 w-[43%] text-center">Nama Barang / Jasa</th>
+                                    <th class="border-r border-slate-900 p-1 w-[8%] text-center">Qty</th>
+                                    <th class="border-r border-slate-900 p-1 w-[12%] text-center">Satuan</th>
+                                    <th class="border-r border-slate-900 p-1 w-[16%] text-center">Harga Satuan (Rp)</th>
+                                    <th class="p-1 w-[16%] text-center">Jumlah (Rp)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="faktur-items-table">
+                                <!-- Generated 6 Rows JS -->
+                            </tbody>
+                        </table>
+
+                        <!-- Terbilang & Summary -->
+                        <div class="grid grid-cols-12 gap-2 mb-2 text-[10px] font-bold">
+                            <div class="col-span-7 border border-dotted border-slate-900 rounded-lg p-2 min-h-[46px]">
+                                <div class="text-slate-800">Terbilang :</div>
+                                <div id="prev-terbilang" class="italic font-serif font-normal text-slate-900 mt-0.5 leading-tight">-</div>
+                            </div>
+
+                            <div class="col-span-5 border border-slate-900 text-[10px] rounded-sm overflow-hidden">
+                                <div class="flex justify-between border-b border-slate-900 p-1 px-2">
+                                    <span>Subtotal</span>
+                                    <span>Rp <span id="prev-subtotal" class="font-mono">0</span></span>
+                                </div>
+                                <div class="flex justify-between border-b border-slate-900 p-1 px-2">
+                                    <span>Diskon</span>
+                                    <span>Rp <span id="prev-discount" class="font-mono">0</span></span>
+                                </div>
+                                <div class="flex justify-between p-1 px-2 font-black bg-slate-50">
+                                    <span>Total</span>
+                                    <span>Rp <span id="prev-total" class="font-mono">0</span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Signatures -->
+                        <div class="grid grid-cols-4 gap-2 text-[9px] font-bold text-center mb-2">
+                            <div class="border border-slate-900 rounded-lg p-1.5 h-16 flex flex-col justify-between">
+                                <div>Dibuat Oleh,</div>
+                                <div id="prev-creator" class="font-normal">( Admin )</div>
+                            </div>
+
+                            <div class="border border-slate-900 rounded-lg p-1.5 h-16 flex flex-col justify-between">
+                                <div>Barang telah diterima dalam keadaan baik<br>Penerima,</div>
+                                <div id="prev-penerima" class="font-semibold text-slate-900">( - )</div>
+                            </div>
+
+                            <div class="border border-slate-900 rounded-lg p-1.5 h-16 text-left flex flex-col justify-between">
+                                <div>Catatan :</div>
+                                <div id="prev-note" class="text-[8px] font-normal italic truncate">-</div>
+                                <div class="font-normal text-center">( ........................ )</div>
+                            </div>
+
+                            <div class="border border-slate-900 rounded-lg p-1.5 h-16 flex flex-col justify-between">
+                                <div>Hormat kami,<br><span class="font-black text-slate-900">BUFURIA</span></div>
+                                <div class="font-normal">( ........................ )</div>
+                            </div>
+                        </div>
+
+                        <!-- Footer -->
+                        <div class="border-t-2 border-slate-900 pt-1.5 text-[8px] font-bold">
+                            <div class="flex justify-between items-center">
+                                <div class="flex items-center space-x-1.5 max-w-[45%]">
+                                    <i data-lucide="map-pin" class="w-3.5 h-3.5 text-amber-500 flex-shrink-0"></i>
+                                    <span class="leading-tight text-slate-900">
+                                        Jalan Wisata Curug Bangkong Desa Kertawirama Kec. Nusaherang Kab. Kuningan, Kode Pos 45563
+                                    </span>
+                                </div>
+                                <div class="flex items-center space-x-1">
+                                    <i data-lucide="instagram" class="w-3.5 h-3.5 text-amber-500"></i>
+                                    <span class="text-slate-900">@bufuria.store</span>
+                                </div>
+                                <div class="flex items-center space-x-1">
+                                    <i data-lucide="phone" class="w-3.5 h-3.5 text-amber-500"></i>
+                                    <span class="text-slate-900">08XX-XXXX-XXXX</span>
+                                </div>
+                                <div class="text-right leading-tight">
+                                    <div class="font-extrabold uppercase text-slate-900 flex items-center justify-end space-x-1">
+                                        <i data-lucide="shopping-cart" class="w-3.5 h-3.5 text-amber-500"></i>
+                                        <span>LENGKAP, KREATIF, SOLUTIF</span>
+                                    </div>
+                                    <div class="italic text-amber-500 font-serif font-semibold text-[9px]">
+                                        Satu Toko, Banyak Solusi!
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: RIWAYAT TRANSAKSI -->
+        <div id="tab-history" class="hidden bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
+            <h2 class="text-lg font-bold text-slate-800 flex items-center space-x-2">
+                <i data-lucide="history" class="w-5 h-5 text-amber-500"></i>
+                <span>Riwayat Penjualan Tersimpan</span>
+            </h2>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-xs">
+                    <thead>
+                        <tr class="bg-slate-900 text-white font-bold">
+                            <th class="p-2.5 text-left">No. Faktur</th>
+                            <th class="p-2.5 text-left">Tanggal</th>
+                            <th class="p-2.5 text-left">Pelanggan</th>
+                            <th class="p-2.5 text-right">Total Akhir</th>
+                            <th class="p-2.5 text-center">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-table-body" class="divide-y divide-slate-100">
+                        <!-- Generated JS -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- JS Application Logic -->
+    <script>
+        // Data Katalog Bawaan
+        const SAMPLE_PRODUCTS = [
+            { category: 'ATK Kantor', name: 'Kertas HVS A4 80gr 1 Rim', price: 48000, unit: 'Rim' },
+            { category: 'ATK Kantor', name: 'Pulpen Gel Black 0.5mm', price: 3500, unit: 'Pcs' },
+            { category: '3D Printer', name: 'Jasa 3D Print High Detail (PLA)', price: 1500, unit: 'Gram' },
+            { category: '3D Printer', name: 'Filament PLA+ 1kg Roll', price: 185000, unit: 'Roll' },
+            { category: 'Servis Laptop', name: 'Install Windows 11 + Software Standar', price: 75000, unit: 'Paket' },
+            { category: 'Servis Laptop', name: 'Servis Laptop (Cleaning & Thermal Paste)', price: 85000, unit: 'Unit' }
+        ];
+
+        // Items State (6 Rows)
+        let itemsData = [
+            { name: "Jasa 3D Print Prototype Custom", qty: 50, unit: "Gram", price: 1500 },
+            { name: "Filament PLA+ Premium Black", qty: 1, unit: "Roll", price: 185000 },
+            { name: "Install Windows 11 & Servis Cleaning Laptop", qty: 1, unit: "Paket", price: 85000 },
+            { name: "", qty: "", unit: "", price: "" },
+            { name: "", qty: "", unit: "", price: "" },
+            { name: "", qty: "", unit: "", price: "" }
+        ];
+
+        // Format Rupiah
+        function formatRp(val) {
+            return new Intl.NumberFormat('id-ID').format(val || 0);
+        }
+
+        // Helper Terbilang
+        function terbilang(angka) {
+            const bil = ["", "Satu", "Dua", "Tiga", "Empat", "Lima", "Enam", "Tujuh", "Delapan", "Sembilan", "Sepuluh", "Sebelas"];
+            angka = Math.floor(Math.abs(angka));
+            if (angka < 12) return bil[angka];
+            if (angka < 20) return terbilang(angka - 10) + " Belas";
+            if (angka < 100) return terbilang(Math.floor(angka / 10)) + " Puluh " + terbilang(angka % 10);
+            if (angka < 200) return "Seratus " + terbilang(angka - 100);
+            if (angka < 1000) return terbilang(Math.floor(angka / 100)) + " Ratus " + terbilang(angka % 100);
+            if (angka < 2000) return "Seribu " + terbilang(angka - 1000);
+            if (angka < 1000000) return terbilang(Math.floor(angka / 1000)) + " Ribu " + terbilang(angka % 1000);
+            if (angka < 1000000000) return terbilang(Math.floor(angka / 1000000)) + " Juta " + terbilang(angka % 1000000);
+            return "";
+        }
+
+        function formatTerbilang(angka) {
+            if (!angka || angka <= 0) return "Nol Rupiah";
+            return terbilang(angka).replace(/\s+/g, ' ').trim() + " Rupiah";
+        }
+
+        // Init Load
+        window.onload = function() {
+            document.getElementById('input-date').value = new Date().toISOString().split('T')[0];
+            renderPosItems();
+            renderCatalog();
+            calculateTotal();
+            renderHoles();
+            renderHistory();
+            lucide.createIcons();
+        };
+
+        function renderHoles() {
+            const containers = document.querySelectorAll('.holes-container');
+            containers.forEach(c => {
+                c.innerHTML = '';
+                for(let i=0; i<16; i++) {
+                    c.innerHTML += `<div class="w-2.5 h-2.5 rounded-full bg-slate-900"></div>`;
+                }
+            });
+        }
+
+        function renderPosItems() {
+            const tbody = document.getElementById('pos-items-body');
+            tbody.innerHTML = '';
+            itemsData.forEach((item, idx) => {
+                const total = (parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0);
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-2 text-center font-bold text-slate-400">${idx+1}.</td>
+                        <td class="p-2"><input type="text" value="${item.name}" oninput="updateItem(${idx}, 'name', this.value)" placeholder="Nama barang ke-${idx+1}" class="w-full border border-slate-200 rounded px-2 py-1 outline-none"></td>
+                        <td class="p-2"><input type="number" value="${item.qty}" oninput="updateItem(${idx}, 'qty', this.value)" placeholder="0" class="w-full border border-slate-200 rounded px-2 py-1 text-center outline-none"></td>
+                        <td class="p-2"><input type="text" value="${item.unit}" oninput="updateItem(${idx}, 'unit', this.value)" placeholder="Satuan" class="w-full border border-slate-200 rounded px-2 py-1 text-center outline-none"></td>
+                        <td class="p-2"><input type="number" value="${item.price}" oninput="updateItem(${idx}, 'price', this.value)" placeholder="0" class="w-full border border-slate-200 rounded px-2 py-1 text-right font-mono outline-none"></td>
+                        <td class="p-2 text-right font-mono font-bold text-slate-700">Rp ${formatRp(total)}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function updateItem(index, field, value) {
+            itemsData[index][field] = value;
+            renderPosItems();
+            calculateTotal();
+        }
+
+        function renderCatalog() {
+            const cat = document.getElementById('catalog-list');
+            cat.innerHTML = '';
+            SAMPLE_PRODUCTS.forEach(p => {
+                cat.innerHTML += `
+                    <div onclick="addPresetItem('${p.name}', ${p.price}, '${p.unit}')" class="pt-2 flex items-center justify-between cursor-pointer hover:bg-amber-50/60 p-2 rounded-lg transition">
+                        <div>
+                            <div class="font-semibold text-xs text-slate-800">${p.name}</div>
+                            <div class="text-[10px] text-slate-400">${p.category}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="font-mono text-xs font-bold text-slate-700">Rp ${formatRp(p.price)}</div>
+                            <span class="text-[10px] font-bold text-amber-600">+ Tambah</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function addPresetItem(name, price, unit) {
+            const emptyIdx = itemsData.findIndex(i => !i.name && !i.price);
+            if (emptyIdx !== -1) {
+                itemsData[emptyIdx] = { name, qty: 1, unit, price };
+            } else {
+                alert("Tabel faktur sudah penuh (maksimal 6 baris)!");
+            }
+            renderPosItems();
+            calculateTotal();
+        }
+
+        function calculateTotal() {
+            let subtotal = 0;
+            itemsData.forEach(i => {
+                subtotal += (parseFloat(i.qty) || 0) * (parseFloat(i.price) || 0);
+            });
+
+            const discount = parseFloat(document.getElementById('input-discount').value) || 0;
+            const cash = parseFloat(document.getElementById('input-cash').value) || 0;
+            const grandtotal = Math.max(0, subtotal - discount);
+            const change = Math.max(0, cash - grandtotal);
+
+            document.getElementById('text-subtotal').innerText = 'Rp ' + formatRp(subtotal);
+            document.getElementById('text-grandtotal').innerText = 'Rp ' + formatRp(grandtotal);
+            document.getElementById('text-terbilang').innerText = `"${formatTerbilang(grandtotal)}"`;
+            document.getElementById('text-change').innerText = 'Rp ' + formatRp(change);
+
+            updatePreview();
+        }
+
+        function updatePreview() {
+            const customerName = document.getElementById('input-customer-name').value;
+            document.getElementById('text-penerima-info').innerText = customerName || '-';
+
+            // Update Preview Elements
+            document.getElementById('prev-invoice-no').innerText = document.getElementById('input-invoice-no').value || '000001';
+            document.getElementById('prev-date').innerText = ': ' + document.getElementById('input-date').value;
+            document.getElementById('prev-customer-name').innerText = ': ' + (customerName || '');
+            document.getElementById('prev-customer-addr').innerText = ': ' + (document.getElementById('input-customer-address').value || '');
+            document.getElementById('prev-customer-addr-line').innerText = document.getElementById('input-customer-address').value || '-';
+            document.getElementById('prev-customer-phone').innerText = ': ' + (document.getElementById('input-customer-phone').value || '');
+
+            document.getElementById('prev-creator').innerText = `( ${document.getElementById('input-creator').value || 'Admin'} )`;
+            document.getElementById('prev-penerima').innerText = `( ${customerName || '....................'} )`;
+            document.getElementById('prev-note').innerText = document.getElementById('input-note').value || '-';
+
+            // Calculate Subtotal & Grandtotal for preview
+            let subtotal = 0;
+            const tableBody = document.getElementById('faktur-items-table');
+            tableBody.innerHTML = '';
+
+            for(let idx=0; idx<6; idx++) {
+                const item = itemsData[idx] || {};
+                const lineTotal = (parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0);
+                subtotal += lineTotal;
+
+                tableBody.innerHTML += `
+                    <tr class="border-b border-dotted border-slate-400 h-[22px]">
+                        <td class="border-r border-slate-900 px-1 text-center font-normal">${idx+1}.</td>
+                        <td class="border-r border-slate-900 px-2 text-left font-normal text-slate-900">${item.name || ''}</td>
+                        <td class="border-r border-slate-900 px-1 text-center font-normal">${item.qty || ''}</td>
+                        <td class="border-r border-slate-900 px-1 text-center font-normal">${item.unit || ''}</td>
+                        <td class="border-r border-slate-900 px-2 text-right font-mono font-normal">${item.price ? formatRp(item.price) : ''}</td>
+                        <td class="px-2 text-right font-mono font-normal">${lineTotal ? formatRp(lineTotal) : ''}</td>
+                    </tr>
+                `;
+            }
+
+            const discount = parseFloat(document.getElementById('input-discount').value) || 0;
+            const total = Math.max(0, subtotal - discount);
+
+            document.getElementById('prev-subtotal').innerText = formatRp(subtotal);
+            document.getElementById('prev-discount').innerText = formatRp(discount);
+            document.getElementById('prev-total').innerText = formatRp(total);
+            document.getElementById('prev-terbilang').innerText = formatTerbilang(total);
+        }
+
+        function clearItemsForm() {
+            itemsData = [
+                { name: "", qty: "", unit: "", price: "" },
+                { name: "", qty: "", unit: "", price: "" },
+                { name: "", qty: "", unit: "", price: "" },
+                { name: "", qty: "", unit: "", price: "" },
+                { name: "", qty: "", unit: "", price: "" },
+                { name: "", qty: "", unit: "", price: "" }
+            ];
+            renderPosItems();
+            calculateTotal();
+        }
+
+        // Tab Switching
+        function switchTab(tabName) {
+            document.getElementById('tab-pos').classList.add('hidden');
+            document.getElementById('tab-preview').classList.add('hidden');
+            document.getElementById('tab-history').classList.add('hidden');
+
+            document.getElementById('btn-tab-pos').className = "px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+            document.getElementById('btn-tab-preview').className = "px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+            document.getElementById('btn-tab-history').className = "px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center space-x-2 bg-slate-800 text-slate-300 hover:bg-slate-700 transition";
+
+            if (tabName === 'pos') {
+                document.getElementById('tab-pos').classList.remove('hidden');
+                document.getElementById('btn-tab-pos').className = "px-3.5 py-2 rounded-lg text-xs font-bold flex items-center space-x-2 bg-amber-500 text-slate-950 shadow-md transition";
+            } else if (tabName === 'preview') {
+                document.getElementById('tab-preview').classList.remove('hidden');
+                document.getElementById('btn-tab-preview').className = "px-3.5 py-2 rounded-lg text-xs font-bold flex items-center space-x-2 bg-amber-500 text-slate-950 shadow-md transition";
+            } else {
+                document.getElementById('tab-history').classList.remove('hidden');
+                document.getElementById('btn-tab-history').className = "px-3.5 py-2 rounded-lg text-xs font-bold flex items-center space-x-2 bg-amber-500 text-slate-950 shadow-md transition";
+            }
+        }
+
+        // Save History to LocalStorage
+        function saveTransactionToLocalStorage() {
+            const invoiceNo = document.getElementById('input-invoice-no').value;
+            const customerName = document.getElementById('input-customer-name').value;
+            const date = document.getElementById('input-date').value;
+
+            let subtotal = 0;
+            itemsData.forEach(i => { subtotal += (parseFloat(i.qty) || 0) * (parseFloat(i.price) || 0); });
+            const discount = parseFloat(document.getElementById('input-discount').value) || 0;
+            const total = Math.max(0, subtotal - discount);
+
+            const record = { invoiceNo, date, customerName, total, timestamp: Date.now() };
+
+            let history = JSON.parse(localStorage.getItem('bufuria_history') || '[]');
+            history.unshift(record);
+            localStorage.setItem('bufuria_history', JSON.stringify(history));
+
+            // Auto Increment Invoice No
+            const nextNo = (parseInt(invoiceNo, 10) + 1).toString().padStart(6, '0');
+            document.getElementById('input-invoice-no').value = nextNo;
+
+            renderHistory();
+            alert(`Transaksi ${invoiceNo} berhasil disimpan!`);
+        }
+
+        function renderHistory() {
+            const tbody = document.getElementById('history-table-body');
+            let history = JSON.parse(localStorage.getItem('bufuria_history') || '[]');
+            tbody.innerHTML = '';
+
+            if (history.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Belum ada riwayat transaksi.</td></tr>`;
+                return;
+            }
+
+            history.forEach(item => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-2.5 font-mono font-bold text-red-600">${item.invoiceNo}</td>
+                        <td class="p-2.5">${item.date}</td>
+                        <td class="p-2.5 font-semibold text-slate-800">${item.customerName || '-'}</td>
+                        <td class="p-2.5 text-right font-mono font-bold">Rp ${formatRp(item.total)}</td>
+                        <td class="p-2.5 text-center">
+                            <button onclick="switchTab('preview')" class="bg-amber-100 text-amber-800 px-2 py-1 rounded font-semibold text-[11px]">Lihat</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>
