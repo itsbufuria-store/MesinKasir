@@ -51,7 +51,7 @@
                 </button>
                 <button id="btn-tab-history" onclick="switchTab('history')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center space-x-1.5">
                     <i data-lucide="history" class="w-4 h-4 text-sky-400"></i>
-                    <span>Riwayat GitHub</span>
+                    <span>Riwayat Lokal</span>
                 </button>
                 <button onclick="saveAndPrint()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 shadow-lg ml-2">
                     <i data-lucide="printer" class="w-4 h-4"></i>
@@ -170,10 +170,14 @@
                         <span id="text-terbilang" class="italic text-amber-800 font-medium">"Nol Rupiah"</span>
                     </div>
 
+                    <div class="p-3 bg-sky-50 border border-sky-200 rounded-lg text-xs text-sky-900">
+                        <b>Penyimpanan tanpa token:</b> pilih folder repository GitHub saat pertama kali menyimpan. File transaksi akan dibuat langsung di <b>riwayat</b> sebagai JSON.
+                    </div>
+
                     <div class="flex flex-wrap gap-3 pt-2">
-                        <button id="btn-save" onclick="saveTransactionToGithub()" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-6 rounded-xl text-xs flex items-center justify-center space-x-2 shadow-md transition">
+                        <button id="btn-save" onclick="saveTransactionToLocalFolder()" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-6 rounded-xl text-xs flex items-center justify-center space-x-2 shadow-md transition">
                             <i data-lucide="cloud-upload" class="w-4 h-4"></i>
-                            <span>Simpan ke GitHub</span>
+                            <span>Simpan ke Folder Riwayat</span>
                         </button>
                         <button onclick="saveAndPrint()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-xl text-xs flex items-center justify-center space-x-2 shadow-lg transition">
                             <i data-lucide="printer" class="w-4 h-4"></i>
@@ -337,12 +341,16 @@
                 <div class="flex justify-between items-center border-b pb-3">
                     <h2 class="font-bold text-slate-800 flex items-center space-x-2 text-base">
                         <i data-lucide="history" class="w-5 h-5 text-amber-500"></i>
-                        <span>Riwayat Penjualan (Terhubung GitHub)</span>
+                        <span>Riwayat Penjualan (Folder Riwayat)</span>
                     </h2>
-                    <button onclick="fetchHistoryFromGithub()" class="text-xs text-sky-600 font-semibold px-3 py-1.5 border border-sky-200 rounded-lg hover:bg-sky-50 transition flex items-center space-x-1">
+                    <button onclick="fetchHistoryFromLocalFolder()" class="text-xs text-sky-600 font-semibold px-3 py-1.5 border border-sky-200 rounded-lg hover:bg-sky-50 transition flex items-center space-x-1">
                         <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-                        <span>Muat Ulang Data</span>
+                        <span>Muat Ulang Riwayat</span>
                     </button>
+                </div>
+
+                <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+                    <b>Cara kerja:</b> pilih folder utama repository GitHub Anda. Aplikasi otomatis membuat folder <b>riwayat</b> dan menyimpan setiap transaksi sebagai file JSON. Setelah itu GitHub Desktop dapat melakukan Commit & Push seperti biasa.
                 </div>
 
                 <div class="overflow-x-auto">
@@ -368,12 +376,9 @@
 
     <script>
         // Konfigurasi Terhubung dengan Token Classic GitHub
-        const GITHUB_CONFIG = {
-            username: "itsbufuria-store",
-            repo: "MesinKasir", // GANTI dengan nama repositori Anda di GitHub
-            path: "riwayat/transaksi.json",
-            token: "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"
-        };
+        // Penyimpanan lokal: pilih folder repository GitHub sekali.
+        // Aplikasi akan membuat/menyimpan file JSON di dalam folder "riwayat".
+        let riwayatFolderHandle = null;
 
         let itemsData = [
             { name: "", qty: "", unit: "", price: "" },
@@ -541,101 +546,146 @@
             document.getElementById('prev-terbilang').innerText = formatTerbilang(grandtotal);
         }
 
-        async function fetchHistoryFromGithub() {
-            const url = `https://api.github.com/repos/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}`;
+        async function pilihFolderRiwayat() {
+            if (!window.showDirectoryPicker) {
+                alert("Browser ini belum mendukung pemilihan folder. Gunakan Google Chrome atau Microsoft Edge versi terbaru.");
+                return false;
+            }
+
             try {
-                const res = await fetch(url, {
-                    headers: { 'Authorization': `Bearer ${GITHUB_CONFIG.token}` }
-                });
+                const rootHandle = await window.showDirectoryPicker({ mode: "readwrite" });
+                riwayatFolderHandle = await rootHandle.getDirectoryHandle("riwayat", { create: true });
 
-                if (res.status === 404) return { sha: null, content: [] };
-
-                const data = await res.json();
-                const jsonText = decodeURIComponent(escape(atob(data.content)));
-                const content = JSON.parse(jsonText);
-                renderHistory(content);
-                return { sha: data.sha, content: content };
+                showStatus('Folder "riwayat" siap digunakan.', true);
+                await fetchHistoryFromLocalFolder();
+                return true;
             } catch (err) {
-                console.error("Gagal mengambil data dari GitHub", err);
-                return { sha: null, content: [] };
+                if (err.name !== "AbortError") {
+                    console.error("Gagal memilih folder:", err);
+                    showStatus("Gagal memilih folder.", false);
+                }
+                return false;
             }
         }
 
-        async function saveTransactionToGithub() {
+        async function fetchHistoryFromLocalFolder() {
+            if (!riwayatFolderHandle) {
+                renderHistory([]);
+                return [];
+            }
+
+            const history = [];
+
+            try {
+                for await (const [name, handle] of riwayatFolderHandle.entries()) {
+                    if (handle.kind !== "file" || !name.toLowerCase().endsWith(".json")) continue;
+
+                    try {
+                        const file = await handle.getFile();
+                        const textData = await file.text();
+                        const data = JSON.parse(textData);
+
+                        if (data && typeof data === "object") {
+                            history.push(data);
+                        }
+                    } catch (err) {
+                        console.warn("File riwayat dilewati:", name, err);
+                    }
+                }
+
+                history.sort((a, b) => {
+                    const da = new Date(a.createdAt || 0).getTime();
+                    const db = new Date(b.createdAt || 0).getTime();
+                    return db - da;
+                });
+
+                renderHistory(history);
+                return history;
+            } catch (err) {
+                console.error("Gagal membaca folder riwayat:", err);
+                showStatus("Gagal membaca folder riwayat.", false);
+                return [];
+            }
+        }
+
+        function sanitizeFileName(name) {
+            return String(name || "transaksi")
+                .replace(/[<>:"/\\|?*\x00-\x1F]/g, "-")
+                .replace(/\s+/g, "_")
+                .slice(0, 120);
+        }
+
+        async function saveTransactionToLocalFolder() {
             const invoiceNo = document.getElementById('input-invoice-no').value;
             const customerName = document.getElementById('input-customer-name').value;
             const date = document.getElementById('input-date').value;
-            const filteredItems = itemsData.filter(i => i.name.trim() !== "");
+            const filteredItems = itemsData.filter(i => String(i.name || "").trim() !== "");
 
             if (filteredItems.length === 0) {
                 alert("Masukkan minimal 1 barang!");
                 return false;
             }
 
+            if (!riwayatFolderHandle) {
+                const ok = await pilihFolderRiwayat();
+                if (!ok) return false;
+            }
+
             let subtotal = 0;
-            filteredItems.forEach(i => subtotal += (parseFloat(i.qty) || 0) * (parseFloat(i.price) || 0));
+            filteredItems.forEach(i => {
+                subtotal += (parseFloat(i.qty) || 0) * (parseFloat(i.price) || 0);
+            });
+
             const discount = parseFloat(document.getElementById('input-discount').value) || 0;
             const grandTotal = Math.max(0, subtotal - discount);
 
             const newTransaction = {
-                invoiceNo, date, customerName,
+                invoiceNo,
+                date,
+                customerName,
                 address: document.getElementById('input-customer-address').value,
                 phone: document.getElementById('input-customer-phone').value,
                 note: document.getElementById('input-note').value,
-                items: filteredItems, subtotal, discount, grandTotal,
-                createdAt: new Date().toLocaleString()
+                items: filteredItems,
+                subtotal,
+                discount,
+                grandTotal,
+                createdAt: new Date().toISOString()
             };
+
+            const fileName = `${sanitizeFileName(date || "tanggal")}_${sanitizeFileName(invoiceNo || "faktur")}.json`;
 
             const btn = document.getElementById('btn-save');
             btn.disabled = true;
-            btn.innerText = "Menyimpan ke GitHub...";
-
-            const { sha, content } = await fetchHistoryFromGithub();
-            content.unshift(newTransaction);
-
-            const jsonString = JSON.stringify(content, null, 2);
-            const utf8Bytes = new TextEncoder().encode(jsonString);
-            const base64Content = btoa(String.fromCharCode(...utf8Bytes));
-
-            const url = `https://api.github.com/repos/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}`;
-            const body = JSON.stringify({
-                message: `Tambah transaksi faktur No. ${invoiceNo}`,
-                content: base64Content,
-                sha: sha || undefined
-            });
+            btn.innerText = "Menyimpan...";
 
             try {
-                const res = await fetch(url, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${GITHUB_CONFIG.token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: body
-                });
+                const fileHandle = await riwayatFolderHandle.getFileHandle(fileName, { create: true });
+                const writable = await fileHandle.createWritable();
+                await writable.write(JSON.stringify(newTransaction, null, 2));
+                await writable.close();
 
-                if (res.ok) {
-                    showStatus("Berhasil tersimpan ke GitHub!", true);
-                    const nextInvoice = (parseInt(invoiceNo) || 0) + 1;
-                    document.getElementById('input-invoice-no').value = String(nextInvoice).padStart(6, '0');
-                    renderHistory(content);
-                } else {
-                    const errData = await res.json();
-                    console.error("Detail Error:", errData);
-                    showStatus(`Gagal (${res.status}): ${errData.message || 'Periksa Repo & Config!'}`, false);
-                }
+                showStatus(`Berhasil disimpan: riwayat/${fileName}`, true);
+
+                const history = await fetchHistoryFromLocalFolder();
+
+                const nextInvoice = (parseInt(invoiceNo) || 0) + 1;
+                document.getElementById('input-invoice-no').value = String(nextInvoice).padStart(6, '0');
+
+                renderHistory(history);
+                return true;
             } catch (err) {
-                console.error("Error Network:", err);
-                showStatus("Terjadi kesalahan koneksi GitHub.", false);
+                console.error("Gagal menyimpan file riwayat:", err);
+                showStatus("Gagal menyimpan file. Pastikan izin folder diberikan.", false);
+                return false;
             } finally {
                 btn.disabled = false;
-                btn.innerText = "Simpan ke GitHub";
+                btn.innerText = "Simpan ke Folder Riwayat";
             }
-            return true;
         }
 
         async function saveAndPrint() {
-            if (await saveTransactionToGithub()) {
+            if (await saveTransactionToLocalFolder()) {
                 window.print();
             }
         }
@@ -687,7 +737,6 @@
             renderCatalog();
             renderPosItems();
             calculateTotal();
-            fetchHistoryFromGithub();
             lucide.createIcons();
         };
     </script>
