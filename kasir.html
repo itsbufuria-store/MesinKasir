@@ -367,11 +367,12 @@
     </main>
 
     <script>
+        // Konfigurasi Terhubung dengan Token Classic GitHub
         const GITHUB_CONFIG = {
-            username: "USERNAME_GITHUB_ANDA",
-            repo: "NAMA_REPOSITORY_ANDA",
+            username: "itsbufuria-store",
+            repo: "NAMA_REPOSITORY_ANDA", // GANTI dengan nama repositori Anda di GitHub
             path: "riwayat/transaksi.json",
-            token: "ghp_xxxxxxxxxxxxxxxxxxxx"
+            token: "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"
         };
 
         let itemsData = [
@@ -550,7 +551,8 @@
                 if (res.status === 404) return { sha: null, content: [] };
 
                 const data = await res.json();
-                const content = JSON.parse(atob(data.content));
+                const jsonText = decodeURIComponent(escape(atob(data.content)));
+                const content = JSON.parse(jsonText);
                 renderHistory(content);
                 return { sha: data.sha, content: content };
             } catch (err) {
@@ -591,10 +593,14 @@
             const { sha, content } = await fetchHistoryFromGithub();
             content.unshift(newTransaction);
 
+            const jsonString = JSON.stringify(content, null, 2);
+            const utf8Bytes = new TextEncoder().encode(jsonString);
+            const base64Content = btoa(String.fromCharCode(...utf8Bytes));
+
             const url = `https://api.github.com/repos/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}`;
             const body = JSON.stringify({
                 message: `Tambah transaksi faktur No. ${invoiceNo}`,
-                content: btoa(JSON.stringify(content, null, 2)),
+                content: base64Content,
                 sha: sha || undefined
             });
 
@@ -614,9 +620,12 @@
                     document.getElementById('input-invoice-no').value = String(nextInvoice).padStart(6, '0');
                     renderHistory(content);
                 } else {
-                    showStatus("Gagal menyimpan ke GitHub. Periksa Token & Config!", false);
+                    const errData = await res.json();
+                    console.error("Detail Error:", errData);
+                    showStatus(`Gagal (${res.status}): ${errData.message || 'Periksa Repo & Config!'}`, false);
                 }
             } catch (err) {
+                console.error("Error Network:", err);
                 showStatus("Terjadi kesalahan koneksi GitHub.", false);
             } finally {
                 btn.disabled = false;
