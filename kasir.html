@@ -181,18 +181,8 @@
                         <a href="admin-barang.html" class="text-[10px] text-amber-600 font-bold hover:underline">+ Kelola</a>
                     </div>
 
-                    <div id="catalog-list" class="max-h-96 overflow-y-auto space-y-2 pr-1 divide-y divide-slate-100">
+                    <div id="catalog-list" class="max-h-[500px] overflow-y-auto space-y-2 pr-1 divide-y divide-slate-100">
                         <!-- JS Generated -->
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-3">
-                    <h3 class="font-bold text-xs text-slate-700 uppercase">Pengaturan Faktur</h3>
-                    <div class="text-xs space-y-2">
-                        <div>
-                            <label class="block text-slate-600 mb-1">Dibuat Oleh (Admin):</label>
-                            <input type="text" id="input-creator" value="Admin BUFURIA" oninput="updatePreview()" class="w-full border border-slate-200 rounded px-2 py-1 outline-none">
-                        </div>
                     </div>
                 </div>
             </div>
@@ -305,11 +295,8 @@
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-4 gap-2 text-[9px] font-bold text-center mb-2">
-                            <div class="border border-slate-900 rounded-lg p-1.5 h-16 flex flex-col justify-between">
-                                <div>Dibuat Oleh,</div>
-                                <div id="prev-creator" class="font-normal">( Admin )</div>
-                            </div>
+                        <!-- Bagian Tanda Tangan (Sudah Disesuaikan) -->
+                        <div class="grid grid-cols-3 gap-2 text-[9px] font-bold text-center mb-2">
                             <div class="border border-slate-900 rounded-lg p-1.5 h-16 flex flex-col justify-between">
                                 <div>Penerima,</div>
                                 <div id="prev-penerima" class="font-semibold text-slate-900">( - )</div>
@@ -445,7 +432,6 @@
             document.getElementById('prev-customer-addr-line').innerText = document.getElementById('input-customer-address').value || '-';
             document.getElementById('prev-customer-phone').innerText = ': ' + (document.getElementById('input-customer-phone').value || '');
 
-            document.getElementById('prev-creator').innerText = `( ${document.getElementById('input-creator').value || 'Admin'} )`;
             document.getElementById('prev-penerima').innerText = `( ${cust || '....................'} )`;
             document.getElementById('prev-note').innerText = document.getElementById('input-note').value || '-';
 
