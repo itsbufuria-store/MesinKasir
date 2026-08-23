@@ -51,7 +51,7 @@
                 </button>
                 <button id="btn-tab-history" onclick="switchTab('history')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center space-x-1.5">
                     <i data-lucide="history" class="w-4 h-4 text-sky-400"></i>
-                    <span>Riwayat Transaksi</span>
+                    <span>Riwayat GitHub</span>
                 </button>
                 <button onclick="saveAndPrint()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 shadow-lg ml-2">
                     <i data-lucide="printer" class="w-4 h-4"></i>
@@ -62,6 +62,9 @@
     </header>
 
     <main class="max-w-7xl mx-auto p-4 md:p-6">
+
+        <!-- Status Sync GitHub Indicator -->
+        <div id="sync-status" class="no-print mb-4 hidden p-2.5 rounded-lg text-xs font-bold text-center"></div>
 
         <!-- TAB KASIR -->
         <div id="tab-pos" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -168,9 +171,9 @@
                     </div>
 
                     <div class="flex flex-wrap gap-3 pt-2">
-                        <button onclick="saveTransaction()" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-6 rounded-xl text-xs flex items-center justify-center space-x-2 shadow-md transition">
-                            <i data-lucide="save" class="w-4 h-4"></i>
-                            <span>Simpan Transaksi</span>
+                        <button id="btn-save" onclick="saveTransactionToGithub()" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-6 rounded-xl text-xs flex items-center justify-center space-x-2 shadow-md transition">
+                            <i data-lucide="cloud-upload" class="w-4 h-4"></i>
+                            <span>Simpan ke GitHub</span>
                         </button>
                         <button onclick="saveAndPrint()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-xl text-xs flex items-center justify-center space-x-2 shadow-lg transition">
                             <i data-lucide="printer" class="w-4 h-4"></i>
@@ -206,7 +209,7 @@
                 <h2 class="text-lg font-bold text-slate-800">Pratinjau Hasil Cetak Faktur Continuous Form</h2>
                 <button onclick="saveAndPrint()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg text-xs flex items-center space-x-2 shadow-md">
                     <i data-lucide="printer" class="w-4 h-4"></i>
-                    <span>Simpan & Cetak Faktur Now</span>
+                    <span>Simpan & Cetak Faktur</span>
                 </button>
             </div>
 
@@ -222,16 +225,13 @@
                     </div>
 
                     <div class="px-5">
-                        <div class="flex justify-between items-start mb-2">
+                        <div class="flex justify-between items-center mb-2">
+                            <!-- Bagian Logo Diperbesar -->
                             <div class="w-[62%]">
-                                <div class="flex items-center space-x-3">
-                                    <img src="images/logo.png" alt="BUFURIA Logo" class="h-11 object-contain" onerror="this.onerror=null; this.src='logo.png';">
-                                </div>
-                                <div class="text-[8px] font-bold text-slate-900 mt-1 space-x-1">
-                                    <span>ATK KANTOR</span> <span>|</span> <span>CREATIVE 3D PRINTER</span> <span>|</span> <span>TEKNISI LAPTOP</span>
-                                </div>
+                                <img src="images/logo.png" alt="BUFURIA Logo" class="h-24 max-w-full object-contain" onerror="this.onerror=null; this.src='logo.png';">
                             </div>
 
+                            <!-- Bagian Nomor & Tanggal Faktur -->
                             <div class="w-[36%] text-right">
                                 <h2 class="text-sm font-black tracking-wide uppercase text-slate-900 mb-1">
                                     FAKTUR PEMBELIAN
@@ -306,7 +306,6 @@
                             </div>
                         </div>
 
-                        <!-- Tanda Tangan -->
                         <div class="grid grid-cols-3 gap-2 text-[9px] font-bold text-center mb-2">
                             <div class="border border-slate-900 rounded-lg p-1.5 h-16 flex flex-col justify-between">
                                 <div>Penerima,</div>
@@ -332,16 +331,17 @@
             </div>
         </div>
 
-        <!-- TAB RIWAYAT TRANSAKSI -->
+        <!-- TAB RIWAYAT TRANSAKSI GITHUB -->
         <div id="tab-history" class="hidden space-y-4">
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-4">
                 <div class="flex justify-between items-center border-b pb-3">
                     <h2 class="font-bold text-slate-800 flex items-center space-x-2 text-base">
                         <i data-lucide="history" class="w-5 h-5 text-amber-500"></i>
-                        <span>Daftar Riwayat Transaksi Penjualan</span>
+                        <span>Riwayat Penjualan (Terhubung GitHub)</span>
                     </h2>
-                    <button onclick="clearHistory()" class="text-xs text-rose-600 font-semibold px-3 py-1.5 border border-rose-200 rounded-lg hover:bg-rose-50 transition">
-                        Hapus Semua Riwayat
+                    <button onclick="fetchHistoryFromGithub()" class="text-xs text-sky-600 font-semibold px-3 py-1.5 border border-sky-200 rounded-lg hover:bg-sky-50 transition flex items-center space-x-1">
+                        <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                        <span>Muat Ulang Data</span>
                     </button>
                 </div>
 
@@ -367,6 +367,13 @@
     </main>
 
     <script>
+        const GITHUB_CONFIG = {
+            username: "USERNAME_GITHUB_ANDA",
+            repo: "NAMA_REPOSITORY_ANDA",
+            path: "riwayat/transaksi.json",
+            token: "ghp_xxxxxxxxxxxxxxxxxxxx"
+        };
+
         let itemsData = [
             { name: "", qty: "", unit: "", price: "" },
             { name: "", qty: "", unit: "", price: "" },
@@ -374,6 +381,15 @@
             { name: "", qty: "", unit: "", price: "" },
             { name: "", qty: "", unit: "", price: "" }
         ];
+
+        function showStatus(msg, isSuccess = true) {
+            const statusDiv = document.getElementById('sync-status');
+            statusDiv.classList.remove('hidden', 'bg-emerald-100', 'text-emerald-800', 'bg-rose-100', 'text-rose-800');
+            statusDiv.classList.add(isSuccess ? 'bg-emerald-100' : 'bg-rose-100');
+            statusDiv.classList.add(isSuccess ? 'text-emerald-800' : 'text-rose-800');
+            statusDiv.innerText = msg;
+            setTimeout(() => statusDiv.classList.add('hidden'), 4000);
+        }
 
         function formatRp(val) { return new Intl.NumberFormat('id-ID').format(val || 0); }
 
@@ -398,7 +414,7 @@
             list.innerHTML = '';
 
             if (products.length === 0) {
-                list.innerHTML = `<div class="text-xs text-slate-400 text-center py-4">Belum ada barang di database.<br><a href="admin-barang.html" class="text-amber-600 font-bold">Tambah Barang Baru</a></div>`;
+                list.innerHTML = `<div class="text-xs text-slate-400 text-center py-4">Belum ada barang di database.</div>`;
                 return;
             }
 
@@ -524,127 +540,119 @@
             document.getElementById('prev-terbilang').innerText = formatTerbilang(grandtotal);
         }
 
-        /* --- FITUR PENYIMPANAN TRANSAKSI --- */
+        async function fetchHistoryFromGithub() {
+            const url = `https://api.github.com/repos/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}`;
+            try {
+                const res = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${GITHUB_CONFIG.token}` }
+                });
 
-        function saveTransaction() {
+                if (res.status === 404) return { sha: null, content: [] };
+
+                const data = await res.json();
+                const content = JSON.parse(atob(data.content));
+                renderHistory(content);
+                return { sha: data.sha, content: content };
+            } catch (err) {
+                console.error("Gagal mengambil data dari GitHub", err);
+                return { sha: null, content: [] };
+            }
+        }
+
+        async function saveTransactionToGithub() {
             const invoiceNo = document.getElementById('input-invoice-no').value;
             const customerName = document.getElementById('input-customer-name').value;
             const date = document.getElementById('input-date').value;
-            const address = document.getElementById('input-customer-address').value;
-            const phone = document.getElementById('input-customer-phone').value;
-            const note = document.getElementById('input-note').value;
-            const discount = parseFloat(document.getElementById('input-discount').value) || 0;
-
             const filteredItems = itemsData.filter(i => i.name.trim() !== "");
 
             if (filteredItems.length === 0) {
-                alert("Masukkan minimal 1 barang untuk disimpan!");
+                alert("Masukkan minimal 1 barang!");
                 return false;
             }
 
             let subtotal = 0;
             filteredItems.forEach(i => subtotal += (parseFloat(i.qty) || 0) * (parseFloat(i.price) || 0));
+            const discount = parseFloat(document.getElementById('input-discount').value) || 0;
             const grandTotal = Math.max(0, subtotal - discount);
 
-            const transactionData = {
-                invoiceNo,
-                date,
-                customerName,
-                address,
-                phone,
-                note,
-                items: filteredItems,
-                subtotal,
-                discount,
-                grandTotal,
+            const newTransaction = {
+                invoiceNo, date, customerName,
+                address: document.getElementById('input-customer-address').value,
+                phone: document.getElementById('input-customer-phone').value,
+                note: document.getElementById('input-note').value,
+                items: filteredItems, subtotal, discount, grandTotal,
                 createdAt: new Date().toLocaleString()
             };
 
-            const history = JSON.parse(localStorage.getItem('bufuria_sales_history') || '[]');
-            
-            // Perbarui atau Tambah
-            const existingIndex = history.findIndex(h => h.invoiceNo === invoiceNo);
-            if (existingIndex !== -1) {
-                history[existingIndex] = transactionData;
-            } else {
-                history.unshift(transactionData);
+            const btn = document.getElementById('btn-save');
+            btn.disabled = true;
+            btn.innerText = "Menyimpan ke GitHub...";
+
+            const { sha, content } = await fetchHistoryFromGithub();
+            content.unshift(newTransaction);
+
+            const url = `https://api.github.com/repos/${GITHUB_CONFIG.username}/${GITHUB_CONFIG.repo}/contents/${GITHUB_CONFIG.path}`;
+            const body = JSON.stringify({
+                message: `Tambah transaksi faktur No. ${invoiceNo}`,
+                content: btoa(JSON.stringify(content, null, 2)),
+                sha: sha || undefined
+            });
+
+            try {
+                const res = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${GITHUB_CONFIG.token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: body
+                });
+
+                if (res.ok) {
+                    showStatus("Berhasil tersimpan ke GitHub!", true);
+                    const nextInvoice = (parseInt(invoiceNo) || 0) + 1;
+                    document.getElementById('input-invoice-no').value = String(nextInvoice).padStart(6, '0');
+                    renderHistory(content);
+                } else {
+                    showStatus("Gagal menyimpan ke GitHub. Periksa Token & Config!", false);
+                }
+            } catch (err) {
+                showStatus("Terjadi kesalahan koneksi GitHub.", false);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Simpan ke GitHub";
             }
-
-            localStorage.setItem('bufuria_sales_history', JSON.stringify(history));
-
-            // Naikkan nomor faktur otomatis
-            const nextInvoice = (parseInt(invoiceNo) || 0) + 1;
-            document.getElementById('input-invoice-no').value = String(nextInvoice).padStart(6, '0');
-
-            renderHistory();
             return true;
         }
 
-        function saveAndPrint() {
-            if (saveTransaction()) {
+        async function saveAndPrint() {
+            if (await saveTransactionToGithub()) {
                 window.print();
             }
         }
 
-        function renderHistory() {
-            const history = JSON.parse(localStorage.getItem('bufuria_sales_history') || '[]');
+        function renderHistory(history = []) {
             const tbody = document.getElementById('history-table-body');
             tbody.innerHTML = '';
 
             if (history.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Belum ada riwayat transaksi yang disimpan.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Belum ada riwayat transaksi di GitHub.</td></tr>`;
                 return;
             }
 
-            history.forEach((h, idx) => {
+            history.forEach((h) => {
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50">
                         <td class="p-3 font-mono font-bold text-red-600">${h.invoiceNo}</td>
                         <td class="p-3">${h.date}</td>
                         <td class="p-3 font-bold">${h.customerName}</td>
                         <td class="p-3 font-mono font-bold text-emerald-600">Rp ${formatRp(h.grandTotal)}</td>
-                        <td class="p-3 text-center space-x-2">
-                            <button onclick="loadHistoryItem(${idx})" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-2 py-1 rounded text-[11px]">Buka & Edit</button>
-                            <button onclick="deleteHistoryItem(${idx})" class="text-rose-600 hover:text-rose-800 font-bold text-[11px]">Hapus</button>
+                        <td class="p-3 text-center">
+                            <span class="text-[10px] bg-slate-100 px-2 py-1 rounded border">Tersimpan di Cloud</span>
                         </td>
                     </tr>
                 `;
             });
-        }
-
-        function loadHistoryItem(idx) {
-            const history = JSON.parse(localStorage.getItem('bufuria_sales_history') || '[]');
-            const item = history[idx];
-            if(!item) return;
-
-            document.getElementById('input-invoice-no').value = item.invoiceNo;
-            document.getElementById('input-date').value = item.date;
-            document.getElementById('input-customer-name').value = item.customerName;
-            document.getElementById('input-customer-address').value = item.address;
-            document.getElementById('input-customer-phone').value = item.phone;
-            document.getElementById('input-note').value = item.note;
-            document.getElementById('input-discount').value = item.discount;
-
-            itemsData = JSON.parse(JSON.stringify(item.items));
-            renderPosItems();
-            calculateTotal();
-            switchTab('pos');
-        }
-
-        function deleteHistoryItem(idx) {
-            if(confirm("Yakin ingin menghapus riwayat transaksi ini?")) {
-                const history = JSON.parse(localStorage.getItem('bufuria_sales_history') || '[]');
-                history.splice(idx, 1);
-                localStorage.setItem('bufuria_sales_history', JSON.stringify(history));
-                renderHistory();
-            }
-        }
-
-        function clearHistory() {
-            if(confirm("Hapus seluruh riwayat transaksi?")) {
-                localStorage.removeItem('bufuria_sales_history');
-                renderHistory();
-            }
         }
 
         function clearItemsForm() {
@@ -670,7 +678,7 @@
             renderCatalog();
             renderPosItems();
             calculateTotal();
-            renderHistory();
+            fetchHistoryFromGithub();
             lucide.createIcons();
         };
     </script>
