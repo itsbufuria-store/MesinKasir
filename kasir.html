@@ -39,7 +39,7 @@
             <div class="flex items-center space-x-2">
                 <a href="admin-barang.html" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center space-x-1.5 transition">
                     <i data-lucide="package" class="w-4 h-4 text-amber-400"></i>
-                    <span>Kelola Stok Barang</span>
+                    <span>Kelola Stok</span>
                 </a>
                 <button id="btn-tab-pos" onclick="switchTab('pos')" class="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 flex items-center space-x-1.5 shadow-md">
                     <i data-lucide="calculator" class="w-4 h-4"></i>
@@ -47,11 +47,15 @@
                 </button>
                 <button id="btn-tab-preview" onclick="switchTab('preview')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center space-x-1.5">
                     <i data-lucide="file-text" class="w-4 h-4"></i>
-                    <span>Pratinjau Faktur</span>
+                    <span>Pratinjau</span>
                 </button>
-                <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 shadow-lg ml-2">
+                <button id="btn-tab-history" onclick="switchTab('history')" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-800 text-slate-300 hover:bg-slate-700 flex items-center space-x-1.5">
+                    <i data-lucide="history" class="w-4 h-4 text-sky-400"></i>
+                    <span>Riwayat Transaksi</span>
+                </button>
+                <button onclick="saveAndPrint()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center space-x-1.5 shadow-lg ml-2">
                     <i data-lucide="printer" class="w-4 h-4"></i>
-                    <span>Cetak Faktur</span>
+                    <span>Simpan & Cetak</span>
                 </button>
             </div>
         </div>
@@ -164,13 +168,13 @@
                     </div>
 
                     <div class="flex flex-wrap gap-3 pt-2">
-                        <button onclick="switchTab('preview')" class="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-3 px-4 rounded-xl text-xs flex items-center justify-center space-x-2 shadow-md transition">
-                            <i data-lucide="file-text" class="w-4 h-4"></i>
-                            <span>Pratinjau Faktur</span>
+                        <button onclick="saveTransaction()" class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-3 px-6 rounded-xl text-xs flex items-center justify-center space-x-2 shadow-md transition">
+                            <i data-lucide="save" class="w-4 h-4"></i>
+                            <span>Simpan Transaksi</span>
                         </button>
-                        <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-xl text-xs flex items-center justify-center space-x-2 shadow-lg transition">
+                        <button onclick="saveAndPrint()" class="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-6 rounded-xl text-xs flex items-center justify-center space-x-2 shadow-lg transition">
                             <i data-lucide="printer" class="w-4 h-4"></i>
-                            <span>Cetak Faktur</span>
+                            <span>Simpan & Cetak Faktur</span>
                         </button>
                     </div>
 
@@ -200,9 +204,9 @@
         <div id="tab-preview" class="hidden">
             <div class="no-print flex items-center justify-between mb-4">
                 <h2 class="text-lg font-bold text-slate-800">Pratinjau Hasil Cetak Faktur Continuous Form</h2>
-                <button onclick="window.print()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg text-xs flex items-center space-x-2 shadow-md">
+                <button onclick="saveAndPrint()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-2 rounded-lg text-xs flex items-center space-x-2 shadow-md">
                     <i data-lucide="printer" class="w-4 h-4"></i>
-                    <span>Cetak Faktur Sekarang</span>
+                    <span>Simpan & Cetak Faktur Now</span>
                 </button>
             </div>
 
@@ -302,7 +306,7 @@
                             </div>
                         </div>
 
-                        <!-- Tanda Tangan (3 Kolom) -->
+                        <!-- Tanda Tangan -->
                         <div class="grid grid-cols-3 gap-2 text-[9px] font-bold text-center mb-2">
                             <div class="border border-slate-900 rounded-lg p-1.5 h-16 flex flex-col justify-between">
                                 <div>Penerima,</div>
@@ -328,10 +332,41 @@
             </div>
         </div>
 
+        <!-- TAB RIWAYAT TRANSAKSI -->
+        <div id="tab-history" class="hidden space-y-4">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-4">
+                <div class="flex justify-between items-center border-b pb-3">
+                    <h2 class="font-bold text-slate-800 flex items-center space-x-2 text-base">
+                        <i data-lucide="history" class="w-5 h-5 text-amber-500"></i>
+                        <span>Daftar Riwayat Transaksi Penjualan</span>
+                    </h2>
+                    <button onclick="clearHistory()" class="text-xs text-rose-600 font-semibold px-3 py-1.5 border border-rose-200 rounded-lg hover:bg-rose-50 transition">
+                        Hapus Semua Riwayat
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left">
+                        <thead class="bg-slate-900 text-white font-bold">
+                            <tr>
+                                <th class="p-3">No. Faktur</th>
+                                <th class="p-3">Tanggal</th>
+                                <th class="p-3">Nama Pembeli</th>
+                                <th class="p-3">Total Belanja</th>
+                                <th class="p-3 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="history-table-body" class="divide-y divide-slate-100 font-medium">
+                            <!-- JS Generated -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <script>
-        // Inisialisasi default awal dengan 5 baris kosong
         let itemsData = [
             { name: "", qty: "", unit: "", price: "" },
             { name: "", qty: "", unit: "", price: "" },
@@ -384,7 +419,6 @@
         }
 
         function addCatalogToPos(name, price, unit) {
-            // Cari baris kosong dulu, jika tidak ada tambahkan baris baru
             const emptyIdx = itemsData.findIndex(i => !i.name && !i.price);
             if (emptyIdx !== -1) {
                 itemsData[emptyIdx] = { name, qty: 1, unit, price };
@@ -465,7 +499,6 @@
             const tbody = document.getElementById('faktur-items-table');
             tbody.innerHTML = '';
 
-            // Menampilkan semua item tanpa batasan 6 baris
             itemsData.forEach((item, idx) => {
                 const total = (parseFloat(item.qty) || 0) * (parseFloat(item.price) || 0);
                 subtotal += total;
@@ -491,6 +524,129 @@
             document.getElementById('prev-terbilang').innerText = formatTerbilang(grandtotal);
         }
 
+        /* --- FITUR PENYIMPANAN TRANSAKSI --- */
+
+        function saveTransaction() {
+            const invoiceNo = document.getElementById('input-invoice-no').value;
+            const customerName = document.getElementById('input-customer-name').value;
+            const date = document.getElementById('input-date').value;
+            const address = document.getElementById('input-customer-address').value;
+            const phone = document.getElementById('input-customer-phone').value;
+            const note = document.getElementById('input-note').value;
+            const discount = parseFloat(document.getElementById('input-discount').value) || 0;
+
+            const filteredItems = itemsData.filter(i => i.name.trim() !== "");
+
+            if (filteredItems.length === 0) {
+                alert("Masukkan minimal 1 barang untuk disimpan!");
+                return false;
+            }
+
+            let subtotal = 0;
+            filteredItems.forEach(i => subtotal += (parseFloat(i.qty) || 0) * (parseFloat(i.price) || 0));
+            const grandTotal = Math.max(0, subtotal - discount);
+
+            const transactionData = {
+                invoiceNo,
+                date,
+                customerName,
+                address,
+                phone,
+                note,
+                items: filteredItems,
+                subtotal,
+                discount,
+                grandTotal,
+                createdAt: new Date().toLocaleString()
+            };
+
+            const history = JSON.parse(localStorage.getItem('bufuria_sales_history') || '[]');
+            
+            // Perbarui atau Tambah
+            const existingIndex = history.findIndex(h => h.invoiceNo === invoiceNo);
+            if (existingIndex !== -1) {
+                history[existingIndex] = transactionData;
+            } else {
+                history.unshift(transactionData);
+            }
+
+            localStorage.setItem('bufuria_sales_history', JSON.stringify(history));
+
+            // Naikkan nomor faktur otomatis
+            const nextInvoice = (parseInt(invoiceNo) || 0) + 1;
+            document.getElementById('input-invoice-no').value = String(nextInvoice).padStart(6, '0');
+
+            renderHistory();
+            return true;
+        }
+
+        function saveAndPrint() {
+            if (saveTransaction()) {
+                window.print();
+            }
+        }
+
+        function renderHistory() {
+            const history = JSON.parse(localStorage.getItem('bufuria_sales_history') || '[]');
+            const tbody = document.getElementById('history-table-body');
+            tbody.innerHTML = '';
+
+            if (history.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">Belum ada riwayat transaksi yang disimpan.</td></tr>`;
+                return;
+            }
+
+            history.forEach((h, idx) => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-3 font-mono font-bold text-red-600">${h.invoiceNo}</td>
+                        <td class="p-3">${h.date}</td>
+                        <td class="p-3 font-bold">${h.customerName}</td>
+                        <td class="p-3 font-mono font-bold text-emerald-600">Rp ${formatRp(h.grandTotal)}</td>
+                        <td class="p-3 text-center space-x-2">
+                            <button onclick="loadHistoryItem(${idx})" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-2 py-1 rounded text-[11px]">Buka & Edit</button>
+                            <button onclick="deleteHistoryItem(${idx})" class="text-rose-600 hover:text-rose-800 font-bold text-[11px]">Hapus</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function loadHistoryItem(idx) {
+            const history = JSON.parse(localStorage.getItem('bufuria_sales_history') || '[]');
+            const item = history[idx];
+            if(!item) return;
+
+            document.getElementById('input-invoice-no').value = item.invoiceNo;
+            document.getElementById('input-date').value = item.date;
+            document.getElementById('input-customer-name').value = item.customerName;
+            document.getElementById('input-customer-address').value = item.address;
+            document.getElementById('input-customer-phone').value = item.phone;
+            document.getElementById('input-note').value = item.note;
+            document.getElementById('input-discount').value = item.discount;
+
+            itemsData = JSON.parse(JSON.stringify(item.items));
+            renderPosItems();
+            calculateTotal();
+            switchTab('pos');
+        }
+
+        function deleteHistoryItem(idx) {
+            if(confirm("Yakin ingin menghapus riwayat transaksi ini?")) {
+                const history = JSON.parse(localStorage.getItem('bufuria_sales_history') || '[]');
+                history.splice(idx, 1);
+                localStorage.setItem('bufuria_sales_history', JSON.stringify(history));
+                renderHistory();
+            }
+        }
+
+        function clearHistory() {
+            if(confirm("Hapus seluruh riwayat transaksi?")) {
+                localStorage.removeItem('bufuria_sales_history');
+                renderHistory();
+            }
+        }
+
         function clearItemsForm() {
             itemsData = [
                 { name: "", qty: "", unit: "", price: "" },
@@ -506,6 +662,7 @@
         function switchTab(tab) {
             document.getElementById('tab-pos').classList.toggle('hidden', tab !== 'pos');
             document.getElementById('tab-preview').classList.toggle('hidden', tab !== 'preview');
+            document.getElementById('tab-history').classList.toggle('hidden', tab !== 'history');
         }
 
         window.onload = function() {
@@ -513,6 +670,7 @@
             renderCatalog();
             renderPosItems();
             calculateTotal();
+            renderHistory();
             lucide.createIcons();
         };
     </script>
