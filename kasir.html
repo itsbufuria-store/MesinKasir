@@ -14,12 +14,65 @@
 
         @media print {
             body * { visibility: hidden; }
-            .no-print { display: none !important; }
-            #printable-faktur, #printable-faktur * { visibility: visible; }
-            #printable-faktur {
-                position: absolute; left: 0; top: 0; width: 100% !important; margin: 0 !important; padding: 4px !important; box-shadow: none !important; border: none !important;
+
+            .no-print {
+                display: none !important;
             }
-            @page { size: auto; margin: 0; }
+
+            #printable-faktur,
+            #printable-faktur * {
+                visibility: visible !important;
+            }
+
+            #printable-faktur {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 4px !important;
+                box-shadow: none !important;
+                border: none !important;
+                background: #ffffff !important;
+            }
+
+            /* Paksa tabel faktur tercetak sama seperti Pratinjau */
+            #printable-faktur table {
+                border-collapse: collapse !important;
+                border: 1px solid #0f172a !important;
+            }
+
+            #printable-faktur table thead,
+            #printable-faktur table thead tr {
+                background: #0f172a !important;
+                color: #ffffff !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            #printable-faktur table thead th {
+                background: #0f172a !important;
+                color: #ffffff !important;
+                border: 1px solid #0f172a !important;
+                font-weight: 700 !important;
+                text-align: center !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+
+            #printable-faktur table tbody td {
+                border: 1px solid #0f172a !important;
+                color: #0f172a !important;
+            }
+
+            #printable-faktur .border-slate-900 {
+                border-color: #0f172a !important;
+            }
+
+            @page {
+                size: auto;
+                margin: 0;
+            }
         }
     </style>
 </head>
